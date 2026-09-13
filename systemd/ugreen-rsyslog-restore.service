@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore custom UGREEN rsyslog forwarding configuration
+After=local-fs.target rsyslog.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ugreen-rsyslog-restore-wrapper.sh
+TimeoutStartSec=330
+
+[Install]
+WantedBy=multi-user.target
