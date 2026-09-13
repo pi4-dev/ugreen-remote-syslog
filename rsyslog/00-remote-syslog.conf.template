@@ -1,0 +1,24 @@
+# UGREEN / UGOS application log forwarding
+#
+# This file is intentionally named 00-remote-syslog.conf so that it is
+# evaluated before the vendor rules under /etc/rsyslog.d/. Many UGOS rules
+# end with "stop", so a later forwarding rule would never see those messages.
+#
+# Application INFO messages are intentionally dropped. UGOS application
+# severity is parsed from the beginning of $msg because some services report
+# an outer Syslog severity of "info" even when the application message starts
+# with ERROR or WARN.
+
+if re_match($programname, '(_serv|^ug|^filemgr(cp|mv)$|^syncutils$|^backup_tool$|^certgen$|^domain_tool$|^album_event_auto_generate$|^snapshot_tool_|^jobmgr_(system|user)_model$|^kvm_tool$|^ups_tool$|^smbd_audit$|^ftpd$)') then {
+
+    if re_match($msg, '^[[:space:]]*(WARN|WARNING|ERROR|ERR|CRIT|CRITICAL|ALERT|EMERG|EMERGENCY|FATAL|PANIC)([[:space:]]|$)') then {
+
+        action(
+            type="omfwd"
+            target="@@REMOTE_HOST@@"
+            port="@@REMOTE_PORT@@"
+            protocol="@@PROTOCOL@@"
+            template="RSYSLOG_SyslogProtocol23Format"
+        )
+    }
+}
