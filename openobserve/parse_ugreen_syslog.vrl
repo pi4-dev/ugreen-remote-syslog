@@ -1,0 +1,53 @@
+# OpenObserve VRL ingest function for UGREEN / UGOS RFC 5424 messages.
+#
+# Expected input field:
+#   .message
+#
+# Example input:
+#   2026-01-01T12:34:56.123456+01:00 nas-host cloud_serv 1234 - - ERROR 2026-01-01 12:34:56.123000 cloud_serv/service/module.go:123 operation failed
+#
+# Extracted fields:
+#   .syslog_host
+#   .process
+#   .pid
+#   .log_message
+#   .app_level
+#   .app_message
+#
+# The original .message field is intentionally preserved.
+
+parsed = parse_regex(
+    .message,
+    r'^(?P<syslog_ts>\S+)\s+(?P<syslog_host>\S+)\s+(?P<process>\S+)\s+(?P<pid>\S+)\s+(?P<msgid>\S+)\s+(?P<structured_data>\S+)\s+(?P<log_message>.*)$'
+) ?? {}
+
+if exists(parsed.process) {
+    .process = parsed.process
+}
+
+if exists(parsed.pid) {
+    .pid = parsed.pid
+}
+
+if exists(parsed.syslog_host) {
+    .syslog_host = parsed.syslog_host
+}
+
+if exists(parsed.log_message) {
+    .log_message = parsed.log_message
+
+    level = parse_regex(
+        parsed.log_message,
+        r'^(?P<app_level>TRACE|DEBUG|INFO|NOTICE|WARN|WARNING|ERROR|ERR|CRIT|CRITICAL|ALERT|EMERG|EMERGENCY|FATAL|PANIC)\s+(?P<app_message>.*)$'
+    ) ?? {}
+
+    if exists(level.app_level) {
+        .app_level = level.app_level
+    }
+
+    if exists(level.app_message) {
+        .app_message = level.app_message
+    }
+}
+
+.
